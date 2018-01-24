@@ -7,6 +7,8 @@
 
 package org.usfirst.frc.team6957.robot;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.AnalogInput;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.Joystick;
@@ -27,6 +29,7 @@ import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 
 public class Robot extends TimedRobot {
 	private String gameData; //Text used for determining which switch has been assigned
+	private int stationData; //Intiger that determines what driver station one is in
 	
 	private DifferentialDrive m_robotDrive
 		= new DifferentialDrive(new Spark(0), new Spark(1)); //Creates Drive Train Instance
@@ -34,7 +37,7 @@ public class Robot extends TimedRobot {
 	private Joystick m_stick = new Joystick(0); //Create Joystick Instance
 	
 	//The following specifies the channels for the motor and potentiometer
-	@SuppressWarnings("null")
+	/*@SuppressWarnings("null")
 	private static final int kPotChannel = (Integer) null;
 	@SuppressWarnings("null")
 	private static final int kMotorChannel = (Integer) null;
@@ -48,6 +51,10 @@ public class Robot extends TimedRobot {
 	private PIDController m_pidController; //Creates Variable for PID
 	private AnalogInput m_potentiometer; //Creates Variable for Potentiometer
 	private SpeedController m_elevatorMotor; //Creates Variable for Elevator Motor
+	*/
+	
+	private Number targetOffsetAngle_Horizontal;
+	
 	
 	@Override //Run when robot starts up
 	public void robotInit() {
@@ -55,11 +62,13 @@ public class Robot extends TimedRobot {
 		
 		//The following instantiates the elevator motor, potentiometer,
 		//and PID Controller
+		/*
 		m_potentiometer = new AnalogInput(kPotChannel);
 		m_elevatorMotor = new Spark(kMotorChannel);
 		m_pidController
 		= new PIDController(kP, kI, kD, m_potentiometer, m_elevatorMotor);
 		m_pidController.setInputRange(0, 5);
+		*/
 	}
 
 	@Override //Run when autonomous mode is enabled
@@ -69,7 +78,8 @@ public class Robot extends TimedRobot {
 
 	@Override //Run periodically when autonomous mode is enabled
 	public void autonomousPeriodic() {
-		if (gameData.charAt(0) == 'L') {
+		/*
+		if (gameData.charAt(0) == 'L' && stationData == 1) {
 			//Put left SWITCH auto code here
 		} else if (gameData.charAt(0) == 'R') {
 			//Put right SWITCH auto code here
@@ -82,15 +92,27 @@ public class Robot extends TimedRobot {
 		} else if (gameData.charAt(2) == 'R') {
 			//Put right ENEMY SWITCH code here
 		}
+		*/
+		NetworkTable table = NetworkTableInstance.getDefault().getTable("limelight");
+		targetOffsetAngle_Horizontal = table.getEntry("tx").getNumber(0);
+		System.out.println(targetOffsetAngle_Horizontal);
+		double x = (double) targetOffsetAngle_Horizontal;
+		if (x >= 5.0) {
+			m_robotDrive.arcadeDrive(0.0, 0.5);
+		} else if (x <= -5.0) {
+			m_robotDrive.arcadeDrive(0.0, -0.5);
+		} else {
+			m_robotDrive.arcadeDrive(0.5, 0.0);
+		}
 	}
 	
 	public void telopInit() {
-		m_pidController.enable();
+		//m_pidController.enable();
 	}
 	
 	@Override //Run periodically when teleop mode is enabled
 	public void teleopPeriodic() {
-		m_robotDrive.arcadeDrive(m_stick.getRawAxis(1), m_stick.getRawAxis(4)); //Arcade Drive using 2 Joysticks from Xbox Controller
+		m_robotDrive.arcadeDrive((m_stick.getRawAxis(1) * 0.6), (m_stick.getRawAxis(4) * 0.6)); //Arcade Drive using 2 Joysticks from Xbox Controller
 		//Here goes the code for the Elevator
 		//m_pidController.setSetpoint(kSetPoints[0-2]);
 	}
